@@ -1,23 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus, Edit, Trash2, Package, AlertTriangle, TrendingDown, Filter } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { NotificationModal, ConfirmModal, FormModal } from '../../components/Modal'
 import { useNotification, useConfirm } from '../../hooks/useNotification'
 import ChartCard from '../../components/ChartCard'
 import StatCard from '../../components/StatCard'
-
-const initialMedications = [
-  { id: 1, name: 'Paracetamol 500mg', category: 'Pain Relief', price: 5.99, cost: 3.50, stock: 150, minStock: 50, sku: 'MED001', supplier: 'PharmaCorp', expiryDate: '2026-06-15' },
-  { id: 2, name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 7.99, cost: 4.50, stock: 120, minStock: 40, sku: 'MED002', supplier: 'MedSupply Inc', expiryDate: '2026-08-20' },
-  { id: 3, name: 'Amoxicillin 500mg', category: 'Antibiotics', price: 12.99, cost: 8.00, stock: 15, minStock: 30, sku: 'MED003', supplier: 'PharmaCorp', expiryDate: '2025-12-10' },
-  { id: 4, name: 'Omeprazole 20mg', category: 'Digestive', price: 9.99, cost: 5.50, stock: 95, minStock: 35, sku: 'MED004', supplier: 'HealthMeds', expiryDate: '2026-03-25' },
-  { id: 5, name: 'Loratadine 10mg', category: 'Allergy', price: 8.49, cost: 4.00, stock: 110, minStock: 40, sku: 'MED005', supplier: 'MedSupply Inc', expiryDate: '2026-09-30' },
-  { id: 6, name: 'Metformin 500mg', category: 'Diabetes', price: 6.99, cost: 3.80, stock: 200, minStock: 60, sku: 'MED006', supplier: 'PharmaCorp', expiryDate: '2026-11-15' },
-  { id: 7, name: 'Lisinopril 10mg', category: 'Blood Pressure', price: 11.99, cost: 7.00, stock: 25, minStock: 30, sku: 'MED007', supplier: 'HealthMeds', expiryDate: '2026-04-20' },
-  { id: 8, name: 'Atorvastatin 20mg', category: 'Cholesterol', price: 14.99, cost: 9.50, stock: 60, minStock: 25, sku: 'MED008', supplier: 'PharmaCorp', expiryDate: '2026-07-10' },
-  { id: 9, name: 'Cetirizine 10mg', category: 'Allergy', price: 6.49, cost: 3.20, stock: 8, minStock: 40, sku: 'MED009', supplier: 'MedSupply Inc', expiryDate: '2026-02-28' },
-  { id: 10, name: 'Vitamin D3 1000IU', category: 'Supplements', price: 8.99, cost: 4.50, stock: 180, minStock: 50, sku: 'MED010', supplier: 'HealthMeds', expiryDate: '2027-01-15' },
-]
+import api from '../../services/api'
 
 const categories = ['All', 'Pain Relief', 'Antibiotics', 'Digestive', 'Allergy', 'Diabetes', 'Blood Pressure', 'Cholesterol', 'Supplements']
 const suppliers = ['PharmaCorp', 'MedSupply Inc', 'HealthMeds', 'Generic Meds Co']
@@ -31,7 +19,8 @@ export default function InventoryManagement() {
   const { notification, closeNotification, success, error } = useNotification()
   const { confirm, showConfirm, closeConfirm } = useConfirm()
   
-  const [medications, setMedications] = useState(initialMedications)
+  const [medications, setMedications] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [stockFilter, setStockFilter] = useState('all')
@@ -40,6 +29,23 @@ export default function InventoryManagement() {
   const [formData, setFormData] = useState(emptyForm)
 
   const isAdmin = user?.role === 'admin'
+
+  useEffect(() => {
+    fetchMedications()
+  }, [])
+
+  const fetchMedications = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/pharmacy/medications')
+      setMedications(response.data)
+    } catch (err) {
+      console.error('Failed to fetch medications:', err)
+      error('Error', 'Failed to load medications')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredMedications = medications.filter(med => {
     const matchesSearch = med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,7 +76,7 @@ export default function InventoryManagement() {
         minStock: med.minStock.toString(),
         sku: med.sku,
         supplier: med.supplier,
-        expiryDate: med.expiryDate,
+        expiryDate: med.expiryDate ? med.expiryDate.split('T')[0] : '',
       })
     } else {
       setEditingMed(null)
@@ -79,7 +85,7 @@ export default function InventoryManagement() {
     setShowModal(true)
   }
 
-  const saveMedication = () => {
+  const saveMedication = async () => {
     if (!formData.name || !formData.price || !formData.sku) {
       error('Validation Error', 'Please fill in all required fields')
       return
@@ -93,36 +99,57 @@ export default function InventoryManagement() {
       minStock: parseInt(formData.minStock) || 0,
     }
 
-    if (editingMed) {
-      setMedications(medications.map(m => m.id === editingMed.id ? { ...m, ...medData } : m))
-      success('Updated', 'Medication updated successfully')
-    } else {
-      setMedications([...medications, { id: Date.now(), ...medData }])
-      success('Added', 'New medication added to inventory')
+    try {
+      if (editingMed) {
+        await api.put(`/pharmacy/medications/${editingMed.id}`, medData)
+        setMedications(medications.map(m => m.id === editingMed.id ? { ...m, ...medData } : m))
+        success('Updated', 'Medication updated successfully')
+      } else {
+        const response = await api.post('/pharmacy/medications', medData)
+        setMedications([...medications, response.data.medication])
+        success('Added', 'New medication added to inventory')
+      }
+      setShowModal(false)
+    } catch (err) {
+      console.error('Failed to save medication:', err)
+      error('Error', err.response?.data?.message || 'Failed to save medication')
     }
-    setShowModal(false)
   }
 
   const deleteMedication = (med) => {
     showConfirm(
       'Delete Medication',
       `Are you sure you want to delete "${med.name}" from inventory?`,
-      () => {
-        setMedications(medications.filter(m => m.id !== med.id))
-        success('Deleted', 'Medication removed from inventory')
+      async () => {
+        try {
+          await api.delete(`/pharmacy/medications/${med.id}`)
+          setMedications(medications.filter(m => m.id !== med.id))
+          success('Deleted', 'Medication removed from inventory')
+        } catch (err) {
+          console.error('Failed to delete medication:', err)
+          error('Error', 'Failed to delete medication')
+        }
       },
       'error'
     )
   }
 
-  const adjustStock = (id, amount) => {
-    setMedications(medications.map(m => {
-      if (m.id === id) {
-        const newStock = Math.max(0, m.stock + amount)
-        return { ...m, stock: newStock }
-      }
-      return m
-    }))
+  const adjustStock = async (id, amount) => {
+    try {
+      const response = await api.post(`/pharmacy/medications/${id}/adjust-stock`, { adjustment: amount })
+      setMedications(medications.map(m => m.id === id ? response.data.medication : m))
+    } catch (err) {
+      console.error('Failed to adjust stock:', err)
+      error('Error', 'Failed to adjust stock')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading inventory...</div>
+      </div>
+    )
   }
 
   return (
@@ -151,7 +178,7 @@ export default function InventoryManagement() {
         <StatCard title="Total Products" value={stats.total} icon={Package} />
         <StatCard title="Low Stock" value={stats.lowStock} icon={TrendingDown} />
         <StatCard title="Out of Stock" value={stats.outOfStock} icon={AlertTriangle} />
-        <StatCard title="Inventory Value" value={`$${stats.totalValue.toFixed(2)}`} icon={Package} />
+        <StatCard title="Inventory Value" value={`${stats.totalValue.toFixed(2)}`} icon={Package} />
       </div>
 
       {/* Filters */}
@@ -217,8 +244,8 @@ export default function InventoryManagement() {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <p className="font-medium text-gray-900">${med.price.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">Cost: ${med.cost.toFixed(2)}</p>
+                    <p className="font-medium text-gray-900">${parseFloat(med.price).toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">Cost: ${parseFloat(med.cost).toFixed(2)}</p>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
@@ -244,7 +271,7 @@ export default function InventoryManagement() {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{med.expiryDate}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600">{med.expiryDate ? med.expiryDate.split('T')[0] : '-'}</td>
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
                       <button

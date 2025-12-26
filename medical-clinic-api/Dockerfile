@@ -43,4 +43,4 @@ RUN php artisan route:clear || true
 EXPOSE 10000
 
 # Start command - run migrations then start server
-CMD php artisan migrate --force && php artisan db:seed --class=AppointmentSeeder --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+CMD php artisan migrate --force && php artisan db:seed --class=AppointmentSeeder --force && php artisan db:seed --class=MedicationSeeder --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
