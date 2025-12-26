@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AppointmentController;
 
 // Health check
+Route::get('/', fn() => response()->json(['name' => 'MedClinic API', 'status' => 'running', 'version' => '1.0.0']));
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
 // Authentication
