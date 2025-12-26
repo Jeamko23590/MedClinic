@@ -1,21 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Calendar, Clock, User, Check, X, Search, Filter } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import ChartCard from '../../components/ChartCard'
 import StatCard from '../../components/StatCard'
-
-const initialAppointments = [
-  { id: 1, patient: 'John Doe', doctor: 'Dr. Smith', doctorId: 1, date: '2025-12-26', time: '09:00 AM', status: 'pending', reason: 'Regular checkup', phone: '555-0101' },
-  { id: 2, patient: 'Jane Wilson', doctor: 'Dr. Smith', doctorId: 1, date: '2025-12-26', time: '10:00 AM', status: 'confirmed', reason: 'Follow-up', phone: '555-0102' },
-  { id: 3, patient: 'Mike Brown', doctor: 'Dr. Johnson', doctorId: 2, date: '2025-12-27', time: '02:00 PM', status: 'pending', reason: 'Heart consultation', phone: '555-0103' },
-  { id: 4, patient: 'Sarah Davis', doctor: 'Dr. Williams', doctorId: 3, date: '2025-12-27', time: '03:30 PM', status: 'confirmed', reason: 'Child vaccination', phone: '555-0104' },
-  { id: 5, patient: 'Tom Miller', doctor: 'Dr. Brown', doctorId: 4, date: '2025-12-28', time: '11:00 AM', status: 'pending', reason: 'Knee pain', phone: '555-0105' },
-  { id: 6, patient: 'Emily Clark', doctor: 'Dr. Smith', doctorId: 1, date: '2025-12-28', time: '09:30 AM', status: 'cancelled', reason: 'Flu symptoms', phone: '555-0106' },
-]
+import api from '../../services/api'
 
 export default function AppointmentManagement() {
   const { user } = useAuth()
-  const [appointments, setAppointments] = useState(initialAppointments)
+  const [appointments, setAppointments] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
@@ -23,13 +16,30 @@ export default function AppointmentManagement() {
   const canManageAll = user?.role === 'admin' || user?.role === 'staff'
   const isDoctor = user?.role === 'doctor'
 
+  // Fetch appointments from API
+  useEffect(() => {
+    fetchAppointments()
+  }, [])
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/appointments')
+      setAppointments(response.data)
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Filter appointments based on role
   const getFilteredAppointments = () => {
     let filtered = appointments
 
     // Doctors only see their own appointments
     if (isDoctor) {
-      filtered = filtered.filter(apt => apt.doctor === 'Dr. Smith') // Mock: assume logged in doctor is Dr. Smith
+      filtered = filtered.filter(apt => apt.doctor === 'Dr. Smith')
     }
 
     // Apply search filter
@@ -53,10 +63,21 @@ export default function AppointmentManagement() {
     return filtered
   }
 
-  const updateStatus = (id, newStatus) => {
-    setAppointments(appointments.map(apt =>
-      apt.id === id ? { ...apt, status: newStatus } : apt
-    ))
+  const updateStatus = async (id, newStatus) => {
+    try {
+      if (newStatus === 'cancelled') {
+        await api.delete(`/appointments/${id}`)
+        setAppointments(appointments.filter(apt => apt.id !== id))
+      } else {
+        await api.put(`/appointments/${id}`, { status: newStatus })
+        setAppointments(appointments.map(apt =>
+          apt.id === id ? { ...apt, status: newStatus } : apt
+        ))
+      }
+    } catch (error) {
+      console.error('Failed to update appointment:', error)
+      alert('Failed to update appointment. Please try again.')
+    }
   }
 
   const stats = {
@@ -67,6 +88,14 @@ export default function AppointmentManagement() {
   }
 
   const filteredAppointments = getFilteredAppointments()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading appointments...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
