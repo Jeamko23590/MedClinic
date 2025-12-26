@@ -1,55 +1,90 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Calendar, Clock, Lock, Unlock, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { NotificationModal } from '../../components/Modal'
+import { useNotification } from '../../hooks/useNotification'
 import ChartCard from '../../components/ChartCard'
-
-const doctors = [
-  { id: 1, name: 'Dr. Smith', specialty: 'General Practice' },
-  { id: 2, name: 'Dr. Johnson', specialty: 'Cardiology' },
-  { id: 3, name: 'Dr. Williams', specialty: 'Pediatrics' },
-  { id: 4, name: 'Dr. Brown', specialty: 'Orthopedics' },
-]
+import api from '../../services/api'
 
 export default function ScheduleManagement() {
   const { user } = useAuth()
-  const [selectedDoctor, setSelectedDoctor] = useState(user?.role === 'doctor' ? 1 : null)
-  const [blockedDates, setBlockedDates] = useState({
-    1: [
-      { date: '2025-12-28', reason: 'Personal leave' },
-      { date: '2025-12-29', reason: 'Conference' },
-    ],
-    2: [{ date: '2025-12-27', reason: 'Training' }],
-    3: [],
-    4: [
-      { date: '2025-12-30', reason: 'Holiday' },
-      { date: '2025-12-31', reason: 'Holiday' },
-    ],
-  })
+  const { notification, closeNotification, success, error } = useNotification()
+  
+  const [doctors, setDoctors] = useState([])
+  const [selectedDoctor, setSelectedDoctor] = useState(null)
+  const [blockedDates, setBlockedDates] = useState([])
   const [newBlockDate, setNewBlockDate] = useState('')
   const [newBlockReason, setNewBlockReason] = useState('')
+  const [loading, setLoading] = useState(true)
 
   const canManageAll = user?.role === 'admin' || user?.role === 'staff'
   const isDoctor = user?.role === 'doctor'
 
-  const addBlockedDate = () => {
-    if (!selectedDoctor || !newBlockDate) return
+  useEffect(() => {
+    fetchDoctors()
+  }, [])
 
-    setBlockedDates(prev => ({
-      ...prev,
-      [selectedDoctor]: [
-        ...(prev[selectedDoctor] || []),
-        { date: newBlockDate, reason: newBlockReason || 'Unavailable' }
-      ]
-    }))
-    setNewBlockDate('')
-    setNewBlockReason('')
+  useEffect(() => {
+    if (selectedDoctor) {
+      fetchBlockedDates(selectedDoctor)
+    }
+  }, [selectedDoctor])
+
+  const fetchDoctors = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/appointments/doctors')
+      setDoctors(response.data)
+      if (isDoctor) {
+        setSelectedDoctor(1) // Default to first doctor for doctor role
+      }
+    } catch (err) {
+      console.error('Failed to fetch doctors:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const removeBlockedDate = (doctorId, date) => {
-    setBlockedDates(prev => ({
-      ...prev,
-      [doctorId]: prev[doctorId].filter(d => d.date !== date)
-    }))
+  const fetchBlockedDates = async (doctorId) => {
+    try {
+      const response = await api.get(`/appointments/blocked-dates/${doctorId}`)
+      setBlockedDates(response.data)
+    } catch (err) {
+      console.error('Failed to fetch blocked dates:', err)
+    }
+  }
+
+  const addBlockedDate = async () => {
+    if (!selectedDoctor || !newBlockDate) return
+
+    try {
+      await api.post('/appointments/block-date', {
+        doctor_id: selectedDoctor,
+        date: newBlockDate,
+        reason: newBlockReason || 'Unavailable'
+      })
+      
+      setBlockedDates([...blockedDates, { date: newBlockDate, reason: newBlockReason || 'Unavailable' }])
+      setNewBlockDate('')
+      setNewBlockReason('')
+      success('Date Blocked', 'The date has been blocked successfully')
+    } catch (err) {
+      error('Error', 'Failed to block date')
+    }
+  }
+
+  const removeBlockedDate = async (date) => {
+    try {
+      await api.post('/appointments/unblock-date', {
+        doctor_id: selectedDoctor,
+        date: date
+      })
+      
+      setBlockedDates(blockedDates.filter(d => d.date !== date))
+      success('Date Unblocked', 'The date is now available')
+    } catch (err) {
+      error('Error', 'Failed to unblock date')
+    }
   }
 
   const getMinDate = () => {
@@ -57,8 +92,14 @@ export default function ScheduleManagement() {
     return today.toISOString().split('T')[0]
   }
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading...</div></div>
+  }
+
   return (
     <div className="space-y-6">
+      <NotificationModal {...notification} onClose={closeNotification} />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Schedule Management</h1>
         <p className="text-gray-500">
@@ -67,7 +108,6 @@ export default function ScheduleManagement() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Doctor Selection (Admin/Staff only) */}
         {canManageAll && (
           <div className="lg:col-span-1">
             <ChartCard title="Select Doctor" subtitle="Choose doctor to manage">
@@ -91,7 +131,6 @@ export default function ScheduleManagement() {
           </div>
         )}
 
-        {/* Block Date Form */}
         <div className={canManageAll ? 'lg:col-span-2' : 'lg:col-span-3'}>
           {selectedDoctor && (
             <div className="space-y-6">
@@ -130,14 +169,13 @@ export default function ScheduleManagement() {
                 </div>
               </ChartCard>
 
-              {/* Blocked Dates List */}
               <ChartCard 
                 title="Blocked Dates" 
                 subtitle={`Currently blocked dates for ${doctors.find(d => d.id === selectedDoctor)?.name}`}
               >
-                {blockedDates[selectedDoctor]?.length > 0 ? (
+                {blockedDates.length > 0 ? (
                   <div className="space-y-3">
-                    {blockedDates[selectedDoctor].map((block, index) => (
+                    {blockedDates.map((block, index) => (
                       <div 
                         key={index}
                         className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-lg"
@@ -152,7 +190,7 @@ export default function ScheduleManagement() {
                           </div>
                         </div>
                         <button
-                          onClick={() => removeBlockedDate(selectedDoctor, block.date)}
+                          onClick={() => removeBlockedDate(block.date)}
                           className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
                         >
                           <Trash2 className="w-5 h-5" />

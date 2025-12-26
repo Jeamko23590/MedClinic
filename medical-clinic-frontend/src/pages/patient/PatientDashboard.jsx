@@ -1,13 +1,10 @@
+import { useState, useEffect } from 'react'
 import { Calendar, Clock, FileText, Heart, User, Bell } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import ChartCard from '../../components/ChartCard'
 import StatCard from '../../components/StatCard'
-
-const upcomingAppointments = [
-  { id: 1, doctor: 'Dr. Smith', specialty: 'General Practice', date: '2025-12-28', time: '10:00 AM', status: 'confirmed' },
-  { id: 2, doctor: 'Dr. Johnson', specialty: 'Cardiology', date: '2025-12-30', time: '02:30 PM', status: 'pending' },
-]
+import api from '../../services/api'
 
 const medicalHistory = [
   { id: 1, date: '2025-11-15', doctor: 'Dr. Smith', diagnosis: 'Annual checkup', notes: 'All vitals normal' },
@@ -23,6 +20,28 @@ const notifications = [
 
 export default function PatientDashboard() {
   const { user } = useAuth()
+  const [appointments, setAppointments] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAppointments()
+  }, [])
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true)
+      // Fetch appointments for this patient
+      const response = await api.get('/appointments', { params: { patient_id: user?.id || 4 } })
+      setAppointments(response.data)
+    } catch (err) {
+      console.error('Failed to fetch appointments:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const upcomingAppointments = appointments.filter(a => a.status !== 'cancelled' && a.status !== 'completed')
+  const unreadNotifications = notifications.filter(n => !n.read).length
 
   return (
     <div className="space-y-6">
@@ -39,58 +58,67 @@ export default function PatientDashboard() {
         </Link>
       </div>
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Upcoming Appointments" value="2" icon={Calendar} />
-        <StatCard title="Completed Visits" value="12" icon={FileText} />
+        <StatCard title="Upcoming Appointments" value={upcomingAppointments.length} icon={Calendar} />
+        <StatCard title="Completed Visits" value={appointments.filter(a => a.status === 'completed').length} icon={FileText} />
         <StatCard title="Prescriptions" value="3" icon={Heart} />
-        <StatCard title="Unread Notifications" value="2" icon={Bell} />
+        <StatCard title="Unread Notifications" value={unreadNotifications} icon={Bell} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upcoming Appointments */}
         <div className="lg:col-span-2">
           <ChartCard title="Upcoming Appointments" subtitle="Your scheduled visits">
-            <div className="space-y-4">
-              {upcomingAppointments.map((apt) => (
-                <div key={apt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-primary-600" />
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">Loading...</div>
+            ) : upcomingAppointments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p>No upcoming appointments</p>
+                <Link to="/appointments/book" className="text-primary-600 hover:text-primary-700 text-sm">
+                  Book an appointment →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {upcomingAppointments.map((apt) => (
+                  <div key={apt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                        <User className="w-6 h-6 text-primary-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{apt.doctor}</p>
+                        <p className="text-sm text-gray-500">{apt.reason || 'Consultation'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{apt.doctor}</p>
-                      <p className="text-sm text-gray-500">{apt.specialty}</p>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Calendar className="w-4 h-4" />
+                        <span>{apt.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-500 text-sm">
+                        <Clock className="w-4 h-4" />
+                        <span>{apt.time}</span>
+                      </div>
                     </div>
+                    <span className={`px-3 py-1 text-xs rounded-full ${
+                      apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {apt.status}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>{apt.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-500 text-sm">
-                      <Clock className="w-4 h-4" />
-                      <span>{apt.time}</span>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 text-xs rounded-full ${
-                    apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                  }`}>
-                    {apt.status}
-                  </span>
-                </div>
-              ))}
-              <Link
-                to="/appointments/book"
-                className="block text-center py-3 text-primary-600 hover:text-primary-700 font-medium"
-              >
-                View All Appointments →
-              </Link>
-            </div>
+                ))}
+                <Link
+                  to="/appointments/book"
+                  className="block text-center py-3 text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  View All Appointments →
+                </Link>
+              </div>
+            )}
           </ChartCard>
         </div>
 
-        {/* Notifications */}
         <div>
           <ChartCard title="Notifications" subtitle="Recent updates">
             <div className="space-y-3">
@@ -110,7 +138,6 @@ export default function PatientDashboard() {
         </div>
       </div>
 
-      {/* Medical History */}
       <ChartCard title="Recent Medical History" subtitle="Your past visits and diagnoses">
         <div className="overflow-x-auto">
           <table className="w-full">
