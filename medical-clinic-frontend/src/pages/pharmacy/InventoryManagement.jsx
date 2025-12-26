@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Plus, Edit, Trash2, Package, AlertTriangle, TrendingDown, Filter } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Package, AlertTriangle, TrendingDown } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { NotificationModal, ConfirmModal, FormModal } from '../../components/Modal'
 import { useNotification, useConfirm } from '../../hooks/useNotification'
@@ -22,9 +22,7 @@ const initialMedications = [
 const categories = ['All', 'Pain Relief', 'Antibiotics', 'Digestive', 'Allergy', 'Diabetes', 'Blood Pressure', 'Cholesterol', 'Supplements']
 const suppliers = ['PharmaCorp', 'MedSupply Inc', 'HealthMeds', 'Generic Meds Co']
 
-const emptyForm = {
-  name: '', category: 'Pain Relief', price: '', cost: '', stock: '', minStock: '', sku: '', supplier: 'PharmaCorp', expiryDate: ''
-}
+const emptyForm = { name: '', category: 'Pain Relief', price: '', cost: '', stock: '', minStock: '', sku: '', supplier: 'PharmaCorp', expiryDate: '' }
 
 export default function InventoryManagement() {
   const { user } = useAuth()
@@ -42,12 +40,9 @@ export default function InventoryManagement() {
   const isAdmin = user?.role === 'admin'
 
   const filteredMedications = medications.filter(med => {
-    const matchesSearch = med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         med.sku.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = med.name.toLowerCase().includes(searchTerm.toLowerCase()) || med.sku.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === 'All' || med.category === selectedCategory
-    const matchesStock = stockFilter === 'all' || 
-                        (stockFilter === 'low' && med.stock <= med.minStock) ||
-                        (stockFilter === 'out' && med.stock === 0)
+    const matchesStock = stockFilter === 'all' || (stockFilter === 'low' && med.stock <= med.minStock) || (stockFilter === 'out' && med.stock === 0)
     return matchesSearch && matchesCategory && matchesStock
   })
 
@@ -61,17 +56,7 @@ export default function InventoryManagement() {
   const openModal = (med = null) => {
     if (med) {
       setEditingMed(med)
-      setFormData({
-        name: med.name,
-        category: med.category,
-        price: med.price.toString(),
-        cost: med.cost.toString(),
-        stock: med.stock.toString(),
-        minStock: med.minStock.toString(),
-        sku: med.sku,
-        supplier: med.supplier,
-        expiryDate: med.expiryDate,
-      })
+      setFormData({ name: med.name, category: med.category, price: med.price.toString(), cost: med.cost.toString(), stock: med.stock.toString(), minStock: med.minStock.toString(), sku: med.sku, supplier: med.supplier, expiryDate: med.expiryDate })
     } else {
       setEditingMed(null)
       setFormData(emptyForm)
@@ -84,15 +69,7 @@ export default function InventoryManagement() {
       error('Validation Error', 'Please fill in all required fields')
       return
     }
-
-    const medData = {
-      ...formData,
-      price: parseFloat(formData.price),
-      cost: parseFloat(formData.cost) || 0,
-      stock: parseInt(formData.stock) || 0,
-      minStock: parseInt(formData.minStock) || 0,
-    }
-
+    const medData = { ...formData, price: parseFloat(formData.price), cost: parseFloat(formData.cost) || 0, stock: parseInt(formData.stock) || 0, minStock: parseInt(formData.minStock) || 0 }
     if (editingMed) {
       setMedications(medications.map(m => m.id === editingMed.id ? { ...m, ...medData } : m))
       success('Updated', 'Medication updated successfully')
@@ -104,25 +81,14 @@ export default function InventoryManagement() {
   }
 
   const deleteMedication = (med) => {
-    showConfirm(
-      'Delete Medication',
-      `Are you sure you want to delete "${med.name}" from inventory?`,
-      () => {
-        setMedications(medications.filter(m => m.id !== med.id))
-        success('Deleted', 'Medication removed from inventory')
-      },
-      'error'
-    )
+    showConfirm('Delete Medication', `Are you sure you want to delete "${med.name}"?`, () => {
+      setMedications(medications.filter(m => m.id !== med.id))
+      success('Deleted', 'Medication removed from inventory')
+    }, 'error')
   }
 
   const adjustStock = (id, amount) => {
-    setMedications(medications.map(m => {
-      if (m.id === id) {
-        const newStock = Math.max(0, m.stock + amount)
-        return { ...m, stock: newStock }
-      }
-      return m
-    }))
+    setMedications(medications.map(m => m.id === id ? { ...m, stock: Math.max(0, m.stock + amount) } : m))
   }
 
   return (
@@ -133,57 +99,34 @@ export default function InventoryManagement() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Inventory Management</h1>
-          <p className="text-sm sm:text-base text-gray-500">Manage medication stock and details</p>
+          <p className="text-sm text-gray-500">Manage medication stock and details</p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => openModal()}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center justify-center gap-2 text-sm sm:text-base"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+          <button onClick={() => openModal()} className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center justify-center gap-2 text-sm">
+            <Plus className="w-4 h-4" />
             Add Medication
           </button>
         )}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard title="Total Products" value={stats.total} icon={Package} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard title="Total" value={stats.total} icon={Package} />
         <StatCard title="Low Stock" value={stats.lowStock} icon={TrendingDown} />
         <StatCard title="Out of Stock" value={stats.outOfStock} icon={AlertTriangle} />
-        <StatCard title="Inventory Value" value={`$${stats.totalValue.toFixed(0)}`} icon={Package} />
+        <StatCard title="Value" value={`$${stats.totalValue.toFixed(0)}`} icon={Package} />
       </div>
 
-      {/* Filters */}
       <ChartCard title="Medications" subtitle="View and manage inventory">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search by name or SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              />
-            </div>
+        <div className="flex flex-col gap-3 mb-4">
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm" />
           </div>
-          <div className="flex gap-2 sm:gap-4">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
+          <div className="flex gap-2">
+            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
-            <select
-              value={stockFilter}
-              onChange={(e) => setStockFilter(e.target.value)}
-              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-            >
+            <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm">
               <option value="all">All Stock</option>
               <option value="low">Low Stock</option>
               <option value="out">Out of Stock</option>
@@ -191,73 +134,76 @@ export default function InventoryManagement() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <table className="w-full min-w-[600px]">
+        {/* Mobile Card View */}
+        <div className="sm:hidden space-y-3">
+          {filteredMedications.map((med) => (
+            <div key={med.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+              <div className="flex justify-between items-start mb-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-900 text-sm truncate">{med.name}</p>
+                  <p className="text-xs text-gray-500">{med.sku} • {med.category}</p>
+                </div>
+                <p className="font-bold text-primary-600 text-sm ml-2">${med.price.toFixed(2)}</p>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => adjustStock(med.id, -10)} className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-sm">-</button>
+                  <span className={`font-medium text-sm min-w-[30px] text-center ${med.stock === 0 ? 'text-red-600' : med.stock <= med.minStock ? 'text-amber-600' : 'text-gray-900'}`}>
+                    {med.stock}
+                  </span>
+                  <button onClick={() => adjustStock(med.id, 10)} className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-sm">+</button>
+                  {med.stock <= med.minStock && <AlertTriangle className="w-3 h-3 text-amber-500" />}
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => openModal(med)} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  {isAdmin && (
+                    <button onClick={() => deleteMedication(med)} className="p-1.5 text-red-600 hover:bg-red-50 rounded">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Product</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500 hidden md:table-cell">Category</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Price</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Stock</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Actions</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Product</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Category</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Price</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Stock</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredMedications.map((med) => (
                 <tr key={med.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-3 sm:px-4">
+                  <td className="py-3 px-4">
                     <p className="font-medium text-gray-900 text-sm">{med.name}</p>
                     <p className="text-xs text-gray-500">{med.sku}</p>
                   </td>
-                  <td className="py-3 px-3 sm:px-4 hidden md:table-cell">
-                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
-                      {med.category}
-                    </span>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">{med.category}</span>
                   </td>
-                  <td className="py-3 px-3 sm:px-4">
-                    <p className="font-medium text-gray-900 text-sm">${med.price.toFixed(2)}</p>
-                  </td>
-                  <td className="py-3 px-3 sm:px-4">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <button
-                        onClick={() => adjustStock(med.id, -10)}
-                        className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-xs sm:text-sm"
-                      >
-                        -
-                      </button>
-                      <span className={`font-medium min-w-[30px] text-center text-sm ${
-                        med.stock === 0 ? 'text-red-600' : med.stock <= med.minStock ? 'text-amber-600' : 'text-gray-900'
-                      }`}>
-                        {med.stock}
-                      </span>
-                      <button
-                        onClick={() => adjustStock(med.id, 10)}
-                        className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-xs sm:text-sm"
-                      >
-                        +
-                      </button>
-                      {med.stock <= med.minStock && (
-                        <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
-                      )}
+                  <td className="py-3 px-4 font-medium text-gray-900 text-sm">${med.price.toFixed(2)}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => adjustStock(med.id, -10)} className="w-6 h-6 rounded bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-sm">-</button>
+                      <span className={`font-medium min-w-[40px] text-center text-sm ${med.stock === 0 ? 'text-red-600' : med.stock <= med.minStock ? 'text-amber-600' : 'text-gray-900'}`}>{med.stock}</span>
+                      <button onClick={() => adjustStock(med.id, 10)} className="w-6 h-6 rounded bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-sm">+</button>
+                      {med.stock <= med.minStock && <AlertTriangle className="w-4 h-4 text-amber-500" />}
                     </div>
                   </td>
-                  <td className="py-3 px-3 sm:px-4">
-                    <div className="flex gap-1 sm:gap-2">
-                      <button
-                        onClick={() => openModal(med)}
-                        className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-                      >
-                        <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => deleteMedication(med)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                      )}
+                  <td className="py-3 px-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => openModal(med)} className="p-1 text-gray-600 hover:bg-gray-100 rounded"><Edit className="w-5 h-5" /></button>
+                      {isAdmin && <button onClick={() => deleteMedication(med)} className="p-1 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-5 h-5" /></button>}
                     </div>
                   </td>
                 </tr>
@@ -267,126 +213,59 @@ export default function InventoryManagement() {
         </div>
       </ChartCard>
 
-
-      {/* Add/Edit Modal */}
       <FormModal isOpen={showModal} onClose={() => setShowModal(false)} title={editingMed ? 'Edit Medication' : 'Add New Medication'}>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              placeholder="e.g., Paracetamol 500mg"
-            />
+            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" placeholder="e.g., Paracetamol 500mg" />
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
-              <input
-                type="text"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                placeholder="MED001"
-              />
+              <input type="text" value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" placeholder="MED001" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              >
-                {categories.filter(c => c !== 'All').map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+              <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm">
+                {categories.filter(c => c !== 'All').map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                placeholder="0.00"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+              <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" placeholder="0.00" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                placeholder="0.00"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cost</label>
+              <input type="number" step="0.01" value={formData.cost} onChange={(e) => setFormData({ ...formData, cost: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" placeholder="0.00" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Stock</label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                placeholder="0"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+              <input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" placeholder="0" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Stock Level</label>
-              <input
-                type="number"
-                value={formData.minStock}
-                onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                placeholder="0"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Min Stock</label>
+              <input type="number" value={formData.minStock} onChange={(e) => setFormData({ ...formData, minStock: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" placeholder="0" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
-              <select
-                value={formData.supplier}
-                onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              >
-                {suppliers.map(sup => (
-                  <option key={sup} value={sup}>{sup}</option>
-                ))}
+              <select value={formData.supplier} onChange={(e) => setFormData({ ...formData, supplier: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm">
+                {suppliers.map(sup => <option key={sup} value={sup}>{sup}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-              <input
-                type="date"
-                value={formData.expiryDate}
-                onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Expiry</label>
+              <input type="date" value={formData.expiryDate} onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm" />
             </div>
           </div>
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => setShowModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveMedication}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
-            >
-              {editingMed ? 'Save Changes' : 'Add Medication'}
-            </button>
+          <div className="flex gap-3 pt-3">
+            <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm">Cancel</button>
+            <button onClick={saveMedication} className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm">{editingMed ? 'Save' : 'Add'}</button>
           </div>
         </div>
       </FormModal>

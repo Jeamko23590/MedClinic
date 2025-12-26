@@ -13,13 +13,7 @@ const initialUsers = [
   { id: 7, name: 'Mike Brown', email: 'mike@email.com', role: 'patient', status: 'inactive', created: '2024-07-22' },
 ]
 
-const roleIcons = {
-  admin: Shield,
-  doctor: Stethoscope,
-  staff: User,
-  patient: Heart,
-}
-
+const roleIcons = { admin: Shield, doctor: Stethoscope, staff: User, patient: Heart }
 const roleColors = {
   admin: 'bg-purple-100 text-purple-700',
   doctor: 'bg-blue-100 text-blue-700',
@@ -80,44 +74,40 @@ export default function UserManagement() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm sm:text-base text-gray-500">Manage clinic users and their roles</p>
+          <p className="text-sm text-gray-500">Manage clinic users and their roles</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center justify-center gap-2 text-sm sm:text-base"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center justify-center gap-2 text-sm"
         >
-          <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+          <UserPlus className="w-4 h-4" />
           Add User
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard title="Total Users" value={stats.total} icon={Users} />
         <StatCard title="Admins" value={stats.admins} icon={Shield} />
         <StatCard title="Doctors" value={stats.doctors} icon={Stethoscope} />
         <StatCard title="Patients" value={stats.patients} icon={Heart} />
       </div>
 
-      {/* Users Table */}
       <ChartCard title="All Users" subtitle="Manage user accounts and permissions">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              />
-            </div>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex-1 relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
           </div>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
@@ -127,15 +117,56 @@ export default function UserManagement() {
           </select>
         </div>
 
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <table className="w-full min-w-[500px]">
+        {/* Mobile Card View */}
+        <div className="sm:hidden space-y-3">
+          {filteredUsers.map((user) => {
+            const RoleIcon = roleIcons[user.role]
+            return (
+              <div key={user.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${roleColors[user.role]}`}>
+                      <RoleIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => openModal(user)} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => deleteUser(user.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <span className={`px-2 py-0.5 text-xs rounded-full capitalize ${roleColors[user.role]}`}>
+                    {user.role}
+                  </span>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                    user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {user.status}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">User</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Role</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Status</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500 hidden sm:table-cell">Created</th>
-                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Actions</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">User</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Role</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Created</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -143,43 +174,37 @@ export default function UserManagement() {
                 const RoleIcon = roleIcons[user.role]
                 return (
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-3 sm:px-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${roleColors[user.role]}`}>
-                          <RoleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${roleColors[user.role]}`}>
+                          <RoleIcon className="w-5 h-5" />
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{user.name}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-3 sm:px-4">
+                    <td className="py-3 px-4">
                       <span className={`px-2 py-1 text-xs rounded-full capitalize ${roleColors[user.role]}`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="py-3 px-3 sm:px-4">
+                    <td className="py-3 px-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                       }`}>
                         {user.status}
                       </span>
                     </td>
-                    <td className="py-3 px-3 sm:px-4 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">{user.created}</td>
-                    <td className="py-3 px-3 sm:px-4">
-                      <div className="flex gap-1 sm:gap-2">
-                        <button
-                          onClick={() => openModal(user)}
-                          className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-                        >
-                          <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <td className="py-3 px-4 text-sm text-gray-600">{user.created}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        <button onClick={() => openModal(user)} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
+                          <Edit className="w-5 h-5" />
                         </button>
-                        <button
-                          onClick={() => deleteUser(user.id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <button onClick={() => deleteUser(user.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -193,19 +218,19 @@ export default function UserManagement() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-5 w-full max-w-md">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {editingUser ? 'Edit User' : 'Add New User'}
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-sm"
                 />
               </div>
               <div>
@@ -214,46 +239,48 @@ export default function UserManagement() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                >
-                  <option value="admin">Admin</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="staff">Staff</option>
-                  <option value="patient">Patient</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-lg text-sm"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="staff">Staff</option>
+                    <option value="patient">Patient</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-lg text-sm"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3 mt-5">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={saveUser}
-                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
               >
-                {editingUser ? 'Save Changes' : 'Add User'}
+                {editingUser ? 'Save' : 'Add User'}
               </button>
             </div>
           </div>
