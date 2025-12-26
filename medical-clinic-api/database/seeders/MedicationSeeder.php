@@ -23,7 +23,10 @@ class MedicationSeeder extends Seeder
         ];
 
         foreach ($medications as $medication) {
-            Medication::create($medication);
+            Medication::firstOrCreate(
+                ['sku' => $medication['sku']],
+                $medication
+            );
         }
     }
 }

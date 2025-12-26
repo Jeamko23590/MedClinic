@@ -18,7 +18,14 @@ class AppointmentSeeder extends Seeder
         ];
 
         foreach ($appointments as $appointment) {
-            Appointment::create($appointment);
+            Appointment::firstOrCreate(
+                [
+                    'doctor_id' => $appointment['doctor_id'],
+                    'date' => $appointment['date'],
+                    'time' => $appointment['time']
+                ],
+                $appointment
+            );
         }
     }
 }
