@@ -1,62 +1,58 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Calendar, Clock, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { NotificationModal, ConfirmModal } from '../../components/Modal'
 import { useNotification, useConfirm } from '../../hooks/useNotification'
 import ChartCard from '../../components/ChartCard'
 import DatePicker from '../../components/DatePicker'
-import api from '../../services/api'
+
+const doctors = [
+  { id: 1, name: 'Dr. Smith', specialty: 'General Practice', avatar: 'S' },
+  { id: 2, name: 'Dr. Johnson', specialty: 'Cardiology', avatar: 'J' },
+  { id: 3, name: 'Dr. Williams', specialty: 'Pediatrics', avatar: 'W' },
+  { id: 4, name: 'Dr. Brown', specialty: 'Orthopedics', avatar: 'B' },
+]
+
+const timeSlots = [
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+]
+
+const blockedDates = {
+  1: ['2025-12-28', '2025-12-29', '2025-12-31'],
+  2: ['2025-12-27', '2025-12-30'],
+  3: ['2025-12-26'],
+  4: ['2025-12-30', '2025-12-31', '2026-01-01'],
+}
+
+const bookedSlots = {
+  '2025-12-27-1': ['09:00 AM', '10:00 AM'],
+  '2025-12-28-2': ['02:00 PM'],
+  '2025-12-26-3': ['09:30 AM', '11:00 AM'],
+}
 
 export default function AppointmentBooking() {
   const { user } = useAuth()
   const { notification, closeNotification, success, error } = useNotification()
   const { confirm, showConfirm, closeConfirm } = useConfirm()
   
-  const [doctors, setDoctors] = useState([])
-  const [timeSlots, setTimeSlots] = useState([])
-  const [blockedDates, setBlockedDates] = useState([])
   const [selectedDoctor, setSelectedDoctor] = useState(null)
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [reason, setReason] = useState('')
-  const [appointments, setAppointments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [appointments, setAppointments] = useState([
+    { id: 1, doctor: 'Dr. Smith', date: '2025-12-26', time: '10:00 AM', status: 'confirmed', reason: 'Regular checkup' },
+    { id: 2, doctor: 'Dr. Johnson', date: '2025-12-30', time: '02:30 PM', status: 'pending', reason: 'Heart consultation' },
+  ])
 
-  useEffect(() => {
-    fetchInitialData()
-  }, [])
-
-  useEffect(() => {
-    if (selectedDoctor) {
-      fetchBlockedDates(selectedDoctor.id)
-    }
-  }, [selectedDoctor])
-
-  const fetchInitialData = async () => {
-    try {
-      setLoading(true)
-      const [doctorsRes, timeSlotsRes, appointmentsRes] = await Promise.all([
-        api.get('/appointments/doctors'),
-        api.get('/appointments/time-slots'),
-        api.get('/appointments', { params: { patient_id: user?.id || 4 } })
-      ])
-      setDoctors(doctorsRes.data)
-      setTimeSlots(timeSlotsRes.data)
-      setAppointments(appointmentsRes.data)
-    } catch (err) {
-      console.error('Failed to fetch data:', err)
-    } finally {
-      setLoading(false)
-    }
+  const isSlotBooked = (date, doctorId, time) => {
+    const key = `${date}-${doctorId}`
+    return bookedSlots[key]?.includes(time)
   }
 
-  const fetchBlockedDates = async (doctorId) => {
-    try {
-      const response = await api.get(`/appointments/blocked-dates/${doctorId}`)
-      setBlockedDates(response.data.map(b => b.date))
-    } catch (err) {
-      console.error('Failed to fetch blocked dates:', err)
-    }
+  const getAvailableSlots = () => {
+    if (!selectedDoctor || !selectedDate) return timeSlots
+    return timeSlots.filter(slot => !isSlotBooked(selectedDate, selectedDoctor.id, slot))
   }
 
   const handleDateSelect = (date) => {
@@ -64,55 +60,38 @@ export default function AppointmentBooking() {
     setSelectedTime('')
   }
 
-  const handleBookAppointment = async () => {
+  const handleBookAppointment = () => {
     if (!selectedDoctor || !selectedDate || !selectedTime) {
       error('Missing Information', 'Please select a doctor, date, and time slot')
       return
     }
     
-    try {
-      const response = await api.post('/appointments', {
-        doctor_id: selectedDoctor.id,
-        date: selectedDate,
-        time: selectedTime,
-        reason: reason,
-        patient: user?.name || 'Patient',
-        patient_id: user?.id || 4,
-      })
-
-      const newAppointment = {
-        id: response.data.appointment.id,
-        doctor: selectedDoctor.name,
-        doctor_id: selectedDoctor.id,
-        date: selectedDate,
-        time: selectedTime,
-        status: 'pending',
-        reason: reason
-      }
-      
-      setAppointments([...appointments, newAppointment])
-      success('Appointment Booked', `Your appointment with ${selectedDoctor.name} on ${selectedDate} at ${selectedTime} has been submitted.`)
-      setSelectedDoctor(null)
-      setSelectedDate('')
-      setSelectedTime('')
-      setReason('')
-    } catch (err) {
-      error('Booking Failed', err.response?.data?.message || 'Failed to book appointment')
+    const newAppointment = {
+      id: appointments.length + 1,
+      doctor: selectedDoctor.name,
+      date: selectedDate,
+      time: selectedTime,
+      status: 'pending',
+      reason: reason
     }
+    
+    setAppointments([...appointments, newAppointment])
+    success('Appointment Booked', `Your appointment with ${selectedDoctor.name} on ${selectedDate} at ${selectedTime} has been submitted for confirmation.`)
+    setSelectedDoctor(null)
+    setSelectedDate('')
+    setSelectedTime('')
+    setReason('')
   }
 
   const cancelAppointment = (apt) => {
     showConfirm(
       'Cancel Appointment',
       `Are you sure you want to cancel your appointment with ${apt.doctor} on ${apt.date}?`,
-      async () => {
-        try {
-          await api.delete(`/appointments/${apt.id}`)
-          setAppointments(appointments.filter(a => a.id !== apt.id))
-          success('Appointment Cancelled', 'Your appointment has been cancelled successfully')
-        } catch (err) {
-          error('Error', 'Failed to cancel appointment')
-        }
+      () => {
+        setAppointments(appointments.map(a => 
+          a.id === apt.id ? { ...a, status: 'cancelled' } : a
+        ))
+        success('Appointment Cancelled', 'Your appointment has been cancelled successfully')
       },
       'error'
     )
@@ -123,9 +102,7 @@ export default function AppointmentBooking() {
     return today.toISOString().split('T')[0]
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading...</div></div>
-  }
+  const availableSlots = getAvailableSlots()
 
   return (
     <div className="space-y-6">
@@ -138,7 +115,9 @@ export default function AppointmentBooking() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Booking Form */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Select Doctor */}
           <ChartCard title="1. Select Doctor" subtitle="Choose your preferred physician">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {doctors.map((doctor) => (
@@ -157,7 +136,7 @@ export default function AppointmentBooking() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-semibold">
-                      {doctor.name.charAt(4)}
+                      {doctor.avatar}
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{doctor.name}</p>
@@ -169,15 +148,19 @@ export default function AppointmentBooking() {
             </div>
           </ChartCard>
 
+          {/* Select Date with Visual Calendar */}
           {selectedDoctor && (
-            <ChartCard title="2. Select Date" subtitle={`Choose an available date for ${selectedDoctor.name}`}>
+            <ChartCard 
+              title="2. Select Date" 
+              subtitle={`Choose an available date for ${selectedDoctor.name}`}
+            >
               <DatePicker
                 selectedDate={selectedDate}
                 onSelect={handleDateSelect}
-                blockedDates={blockedDates}
+                blockedDates={blockedDates[selectedDoctor.id] || []}
                 minDate={getMinDate()}
               />
-              {blockedDates.length > 0 && (
+              {blockedDates[selectedDoctor.id]?.length > 0 && (
                 <p className="mt-4 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
                   ⚠️ Dates marked with red are unavailable for {selectedDoctor.name}
                 </p>
@@ -185,11 +168,12 @@ export default function AppointmentBooking() {
             </ChartCard>
           )}
 
+          {/* Select Time */}
           {selectedDate && (
             <ChartCard title="3. Select Time" subtitle="Available time slots">
-              {timeSlots.length > 0 ? (
+              {availableSlots.length > 0 ? (
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {timeSlots.map((time) => (
+                  {availableSlots.map((time) => (
                     <button
                       key={time}
                       onClick={() => setSelectedTime(time)}
@@ -206,12 +190,14 @@ export default function AppointmentBooking() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Clock className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>No available slots</p>
+                  <p>No available slots for this date</p>
+                  <p className="text-sm">Please select another date</p>
                 </div>
               )}
             </ChartCard>
           )}
 
+          {/* Reason */}
           {selectedTime && (
             <ChartCard title="4. Reason for Visit" subtitle="Brief description of your concern">
               <textarea
@@ -221,6 +207,8 @@ export default function AppointmentBooking() {
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none resize-none"
                 placeholder="Describe your symptoms or reason for visit..."
               />
+              
+              {/* Summary */}
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-2">Appointment Summary</h4>
                 <div className="space-y-1 text-sm">
@@ -230,6 +218,7 @@ export default function AppointmentBooking() {
                   {reason && <p><span className="text-gray-500">Reason:</span> {reason}</p>}
                 </div>
               </div>
+
               <button
                 onClick={handleBookAppointment}
                 className="mt-4 w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition"
@@ -240,6 +229,7 @@ export default function AppointmentBooking() {
           )}
         </div>
 
+        {/* My Appointments */}
         <div>
           <ChartCard title="My Appointments" subtitle="Upcoming and past visits">
             <div className="space-y-3">
@@ -250,7 +240,9 @@ export default function AppointmentBooking() {
                 </div>
               ) : (
                 appointments.map((apt) => (
-                  <div key={apt.id} className="p-4 rounded-lg border bg-white border-gray-200">
+                  <div key={apt.id} className={`p-4 rounded-lg border ${
+                    apt.status === 'cancelled' ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200'
+                  }`}>
                     <div className="flex justify-between items-start mb-2">
                       <p className="font-medium text-gray-900">{apt.doctor}</p>
                       <span className={`px-2 py-1 text-xs rounded-full ${

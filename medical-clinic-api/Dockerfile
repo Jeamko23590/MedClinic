@@ -7,15 +7,14 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    libpq-dev \
     zip \
     unzip
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions (including PostgreSQL)
-RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
 # Get Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -42,5 +41,5 @@ RUN php artisan route:clear || true
 # Expose port
 EXPOSE 10000
 
-# Start command - run migrations then start server
-CMD php artisan migrate --force && php artisan db:seed --class=AppointmentSeeder --force && php artisan db:seed --class=MedicationSeeder --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Start command
+CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}

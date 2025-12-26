@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react'
-import { Calendar, Clock, Users, CheckCircle, TrendingUp } from 'lucide-react'
+import { Calendar, Clock, Users, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '../../context/AuthContext'
 import ChartCard from '../../components/ChartCard'
 import StatCard from '../../components/StatCard'
-import api from '../../services/api'
+
+const todayAppointments = [
+  { id: 1, patient: 'John Doe', time: '09:00 AM', reason: 'Regular checkup', status: 'completed' },
+  { id: 2, patient: 'Jane Wilson', time: '10:00 AM', reason: 'Follow-up', status: 'in-progress' },
+  { id: 3, patient: 'Mike Brown', time: '11:00 AM', reason: 'Consultation', status: 'waiting' },
+  { id: 4, patient: 'Sarah Davis', time: '02:00 PM', reason: 'Lab results review', status: 'scheduled' },
+  { id: 5, patient: 'Tom Miller', time: '03:30 PM', reason: 'Prescription renewal', status: 'scheduled' },
+]
 
 const weeklyPatients = [
   { day: 'Mon', patients: 12 },
@@ -19,45 +25,18 @@ const weeklyPatients = [
 const statusColors = {
   completed: 'bg-green-100 text-green-700',
   'in-progress': 'bg-blue-100 text-blue-700',
-  confirmed: 'bg-green-100 text-green-700',
-  pending: 'bg-amber-100 text-amber-700',
+  waiting: 'bg-amber-100 text-amber-700',
   scheduled: 'bg-gray-100 text-gray-600',
 }
 
 export default function DoctorDashboard() {
   const { user } = useAuth()
-  const [appointments, setAppointments] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchAppointments()
-  }, [])
-
-  const fetchAppointments = async () => {
-    try {
-      setLoading(true)
-      // Fetch appointments for this doctor (doctor_id = 1 for Dr. Smith)
-      const response = await api.get('/appointments', { params: { doctor_id: 1 } })
-      setAppointments(response.data)
-    } catch (err) {
-      console.error('Failed to fetch appointments:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const todayStr = new Date().toISOString().split('T')[0]
-  const todayAppointments = appointments.filter(a => a.date === todayStr)
 
   const stats = {
     todayTotal: todayAppointments.length,
     completed: todayAppointments.filter(a => a.status === 'completed').length,
     pending: todayAppointments.filter(a => a.status !== 'completed').length,
     weeklyTotal: weeklyPatients.reduce((sum, d) => sum + d.patients, 0),
-  }
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading...</div></div>
   }
 
   return (
@@ -75,44 +54,41 @@ export default function DoctorDashboard() {
         </Link>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard title="Today's Appointments" value={stats.todayTotal} icon={Calendar} />
         <StatCard title="Completed" value={stats.completed} icon={CheckCircle} />
         <StatCard title="Remaining" value={stats.pending} icon={Clock} />
-        <StatCard title="This Week" value={appointments.length} icon={TrendingUp} />
+        <StatCard title="This Week" value={stats.weeklyTotal} icon={TrendingUp} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's Schedule */}
         <div className="lg:col-span-2">
           <ChartCard title="Today's Schedule" subtitle="Your appointments for today">
             <div className="space-y-3">
-              {todayAppointments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>No appointments today</p>
-                </div>
-              ) : (
-                todayAppointments.map((apt) => (
-                  <div 
-                    key={apt.id} 
-                    className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-white"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="text-center min-w-[60px]">
-                        <p className="text-sm font-medium text-gray-900">{apt.time}</p>
-                      </div>
-                      <div className="h-10 w-px bg-gray-200"></div>
-                      <div>
-                        <p className="font-medium text-gray-900">{apt.patient}</p>
-                        <p className="text-sm text-gray-500">{apt.reason}</p>
-                      </div>
+              {todayAppointments.map((apt) => (
+                <div 
+                  key={apt.id} 
+                  className={`flex items-center justify-between p-4 rounded-lg border ${
+                    apt.status === 'in-progress' ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="text-center min-w-[60px]">
+                      <p className="text-sm font-medium text-gray-900">{apt.time}</p>
                     </div>
-                    <span className={`px-3 py-1 text-xs rounded-full capitalize ${statusColors[apt.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {apt.status}
-                    </span>
+                    <div className="h-10 w-px bg-gray-200"></div>
+                    <div>
+                      <p className="font-medium text-gray-900">{apt.patient}</p>
+                      <p className="text-sm text-gray-500">{apt.reason}</p>
+                    </div>
                   </div>
-                ))
-              )}
+                  <span className={`px-3 py-1 text-xs rounded-full capitalize ${statusColors[apt.status]}`}>
+                    {apt.status.replace('-', ' ')}
+                  </span>
+                </div>
+              ))}
             </div>
             <Link
               to="/appointments"
@@ -123,6 +99,7 @@ export default function DoctorDashboard() {
           </ChartCard>
         </div>
 
+        {/* Weekly Overview */}
         <div>
           <ChartCard title="Weekly Overview" subtitle="Patients seen this week">
             <ResponsiveContainer width="100%" height={200}>
@@ -148,6 +125,7 @@ export default function DoctorDashboard() {
             </ResponsiveContainer>
           </ChartCard>
 
+          {/* Quick Actions */}
           <div className="mt-6 space-y-3">
             <Link
               to="/appointments"
