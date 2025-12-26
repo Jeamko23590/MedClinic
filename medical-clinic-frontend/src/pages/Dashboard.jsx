@@ -9,14 +9,14 @@ import { patientForecastData, waitTimeTrend, insights } from '../data/mockData'
 
 export default function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500">Predictive analytics overview for your clinic</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm sm:text-base text-gray-500">Predictive analytics overview for your clinic</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
           title="Today's Patients" 
           value="127" 
@@ -48,16 +48,16 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <ChartCard 
           title="Patient Volume Forecast" 
           subtitle="ARIMA-based prediction with confidence interval"
         >
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={patientForecastData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
-              <YAxis stroke="#6b7280" fontSize={12} />
+              <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tick={{ fontSize: 10 }} />
+              <YAxis stroke="#6b7280" fontSize={10} tick={{ fontSize: 10 }} width={30} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white', 
@@ -100,11 +100,11 @@ export default function Dashboard() {
           title="Wait Time Improvement" 
           subtitle="Before vs after predictive scheduling"
         >
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={waitTimeTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="week" stroke="#6b7280" fontSize={12} />
-              <YAxis stroke="#6b7280" fontSize={12} unit=" min" />
+              <XAxis dataKey="week" stroke="#6b7280" fontSize={10} tick={{ fontSize: 10 }} />
+              <YAxis stroke="#6b7280" fontSize={10} tick={{ fontSize: 10 }} unit=" min" width={40} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white', 
@@ -133,11 +133,11 @@ export default function Dashboard() {
 
       {/* Decision Insights */}
       <ChartCard title="Decision Insights" subtitle="AI-powered recommendations">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {insights.map((insight) => (
             <div 
               key={insight.id}
-              className={`p-4 rounded-lg border ${
+              className={`p-3 sm:p-4 rounded-lg border ${
                 insight.type === 'warning' 
                   ? 'bg-amber-50 border-amber-200' 
                   : insight.type === 'success'
@@ -145,9 +145,9 @@ export default function Dashboard() {
                   : 'bg-blue-50 border-blue-200'
               }`}
             >
-              <h4 className="font-semibold text-gray-900">{insight.title}</h4>
-              <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
-              <button className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700">
+              <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{insight.title}</h4>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">{insight.description}</p>
+              <button className="mt-2 sm:mt-3 text-xs sm:text-sm font-medium text-primary-600 hover:text-primary-700">
                 {insight.action} →
               </button>
             </div>

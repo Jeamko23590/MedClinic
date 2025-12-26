@@ -130,16 +130,16 @@ export default function POSSystem() {
       <ConfirmModal {...confirm} onClose={closeConfirm} onConfirm={confirm.onConfirm} />
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Point of Sale</h1>
-        <p className="text-gray-500">Sell medications to patients</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Point of Sale</h1>
+        <p className="text-sm sm:text-base text-gray-500">Sell medications to patients</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Product Selection */}
         <div className="lg:col-span-2 space-y-4">
           {/* Search and Filter */}
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="flex-1">
               <div className="relative">
                 <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -147,14 +147,14 @@ export default function POSSystem() {
                   placeholder="Search by name or SKU..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                 />
               </div>
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
             >
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -163,21 +163,21 @@ export default function POSSystem() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
             {filteredMedications.map((med) => (
               <button
                 key={med.id}
                 onClick={() => addToCart(med)}
-                className="p-4 bg-white border border-gray-200 rounded-xl hover:border-primary-300 hover:shadow-md transition text-left"
+                className="p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:border-primary-300 hover:shadow-md transition text-left"
               >
-                <p className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">{med.name}</p>
-                <p className="text-xs text-gray-500 mb-2">{med.category}</p>
+                <p className="font-medium text-gray-900 text-xs sm:text-sm mb-1 line-clamp-2">{med.name}</p>
+                <p className="text-xs text-gray-500 mb-2 hidden sm:block">{med.category}</p>
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-primary-600">${med.price.toFixed(2)}</span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
+                  <span className="text-sm sm:text-lg font-bold text-primary-600">${med.price.toFixed(2)}</span>
+                  <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
                     med.stock < 20 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                   }`}>
-                    {med.stock} left
+                    {med.stock}
                   </span>
                 </div>
               </button>

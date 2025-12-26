@@ -5,6 +5,7 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: #f8fafc;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Animation delays for blob effect */
@@ -16,4 +17,41 @@ body {
 }
 .animation-delay-6000 {
   animation-delay: 6s;
+}
+
+/* Mobile responsive utilities */
+@layer utilities {
+  .text-wrap-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Prevent text overflow globally */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Mobile table improvements */
+@media (max-width: 640px) {
+  table {
+    font-size: 0.875rem;
+  }
+  
+  table th,
+  table td {
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Hide less important columns on mobile */
+  .hide-mobile {
+    display: none;
+  }
+}
+
+/* Responsive container */
+.container-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }

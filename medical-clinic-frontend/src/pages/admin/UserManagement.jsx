@@ -76,23 +76,23 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500">Manage clinic users and their roles</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Management</h1>
+          <p className="text-sm sm:text-base text-gray-500">Manage clinic users and their roles</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center gap-2"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center justify-center gap-2 text-sm sm:text-base"
         >
-          <UserPlus className="w-5 h-5" />
+          <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
           Add User
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <StatCard title="Total Users" value={stats.total} icon={Users} />
         <StatCard title="Admins" value={stats.admins} icon={Shield} />
         <StatCard title="Doctors" value={stats.doctors} icon={Stethoscope} />
@@ -101,8 +101,8 @@ export default function UserManagement() {
 
       {/* Users Table */}
       <ChartCard title="All Users" subtitle="Manage user accounts and permissions">
-        <div className="flex flex-wrap gap-4 mb-6">
-          <div className="flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex-1">
             <div className="relative">
               <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -110,14 +110,14 @@ export default function UserManagement() {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
               />
             </div>
           </div>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+            className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
@@ -127,15 +127,15 @@ export default function UserManagement() {
           </select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">User</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Role</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Created</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">User</th>
+                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Role</th>
+                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Status</th>
+                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500 hidden sm:table-cell">Created</th>
+                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -143,43 +143,43 @@ export default function UserManagement() {
                 const RoleIcon = roleIcons[user.role]
                 return (
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${roleColors[user.role]}`}>
-                          <RoleIcon className="w-5 h-5" />
+                    <td className="py-3 px-3 sm:px-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${roleColors[user.role]}`}>
+                          <RoleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-3 sm:px-4">
                       <span className={`px-2 py-1 text-xs rounded-full capitalize ${roleColors[user.role]}`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-3 sm:px-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                       }`}>
                         {user.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{user.created}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
+                    <td className="py-3 px-3 sm:px-4 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">{user.created}</td>
+                    <td className="py-3 px-3 sm:px-4">
+                      <div className="flex gap-1 sm:gap-2">
                         <button
                           onClick={() => openModal(user)}
                           className="p-1 text-gray-600 hover:bg-gray-100 rounded"
                         >
-                          <Edit className="w-5 h-5" />
+                          <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <button
                           onClick={() => deleteUser(user.id)}
                           className="p-1 text-red-600 hover:bg-red-50 rounded"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
                     </td>

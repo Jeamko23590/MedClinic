@@ -58,15 +58,15 @@ export default function ScheduleManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Schedule Management</h1>
-        <p className="text-gray-500">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Schedule Management</h1>
+        <p className="text-sm sm:text-base text-gray-500">
           {canManageAll ? 'Manage doctor availability and blocked dates' : 'Manage your availability'}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Doctor Selection (Admin/Staff only) */}
         {canManageAll && (
           <div className="lg:col-span-1">
@@ -82,8 +82,8 @@ export default function ScheduleManagement() {
                         : 'border-gray-200 hover:border-primary-200'
                     }`}
                   >
-                    <p className="font-medium text-gray-900">{doctor.name}</p>
-                    <p className="text-sm text-gray-500">{doctor.specialty}</p>
+                    <p className="font-medium text-gray-900 text-sm">{doctor.name}</p>
+                    <p className="text-xs text-gray-500">{doctor.specialty}</p>
                   </button>
                 ))}
               </div>
@@ -94,36 +94,36 @@ export default function ScheduleManagement() {
         {/* Block Date Form */}
         <div className={canManageAll ? 'lg:col-span-2' : 'lg:col-span-3'}>
           {selectedDoctor && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <ChartCard title="Block New Date" subtitle="Mark dates as unavailable">
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex-1 min-w-[200px]">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                     <input
                       type="date"
                       value={newBlockDate}
                       min={getMinDate()}
                       onChange={(e) => setNewBlockDate(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                     />
                   </div>
-                  <div className="flex-1 min-w-[200px]">
+                  <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
                     <input
                       type="text"
                       value={newBlockReason}
                       onChange={(e) => setNewBlockReason(e.target.value)}
-                      placeholder="e.g., Personal leave, Conference"
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                      placeholder="e.g., Personal leave"
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                     />
                   </div>
                   <div className="flex items-end">
                     <button
                       onClick={addBlockedDate}
                       disabled={!newBlockDate}
-                      className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+                      className="w-full sm:w-auto px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
                     >
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                       Block Date
                     </button>
                   </div>
@@ -140,31 +140,31 @@ export default function ScheduleManagement() {
                     {blockedDates[selectedDoctor].map((block, index) => (
                       <div 
                         key={index}
-                        className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-lg"
+                        className="flex items-center justify-between p-3 sm:p-4 bg-red-50 border border-red-100 rounded-lg"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                            <Lock className="w-5 h-5 text-red-600" />
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{block.date}</p>
-                            <p className="text-sm text-gray-500">{block.reason}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 text-sm">{block.date}</p>
+                            <p className="text-xs text-gray-500 truncate">{block.reason}</p>
                           </div>
                         </div>
                         <button
                           onClick={() => removeBlockedDate(selectedDoctor, block.date)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition flex-shrink-0"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Unlock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No blocked dates</p>
-                    <p className="text-sm text-gray-400">All dates are available for appointments</p>
+                    <Unlock className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">No blocked dates</p>
+                    <p className="text-xs text-gray-400">All dates are available for appointments</p>
                   </div>
                 )}
               </ChartCard>
@@ -172,9 +172,9 @@ export default function ScheduleManagement() {
           )}
 
           {!selectedDoctor && canManageAll && (
-            <div className="bg-gray-50 rounded-xl p-8 text-center">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Select a doctor to manage their schedule</p>
+            <div className="bg-gray-50 rounded-xl p-6 sm:p-8 text-center">
+              <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">Select a doctor to manage their schedule</p>
             </div>
           )}
         </div>
